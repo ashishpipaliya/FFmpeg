@@ -1,21 +1,34 @@
-name: Build FFmpeg for Linux
+name: Build FFmpeg
 
 on:
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up dependencies
+      - name: Set up environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential yasm pkg-config libx264-dev libfdk-aac-dev libmp3lame-dev libopus-dev libvpx-dev
+          sudo apt-get install -y \
+            autoconf \
+            automake \
+            build-essential \
+            cmake \
+            git \
+            libfdk-aac-dev \
+            libmp3lame-dev \
+            libopus-dev \
+            libvpx-dev \
+            yasm \
+            pkg-config \
+            libx264-dev
 
-      - name: Build FFmpeg
+      - name: Configure and Build FFmpeg
         run: |
           ./configure \
             --pkg-config-flags="--static" \
@@ -34,34 +47,24 @@ jobs:
             --disable-shared \
             --disable-debug \
             --disable-doc \
-            --disable-ffplay  # Removed --disable-programs
+            --disable-programs \
+            --disable-ffplay
+
           make -j$(nproc)
 
-      - name: Create Redistributable Package
-        run: |
+          # Create redistributable directory
           mkdir -p ../ffmpeg-redistributable
           cp ffmpeg ../ffmpeg-redistributable/
           cp ffprobe ../ffmpeg-redistributable/
+
+          # Create the tar.gz file
           cd ..
           tar -czvf ffmpeg-redistributable-$(date +%Y%m%d%H%M).tar.gz ffmpeg-redistributable
-          echo "FFmpeg redistributable built successfully."
 
-      - name: Set Git Identity
+      - name: Create GitHub Release
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-
-      - name: Create Tag
-        run: |
-          git tag -a "v$(date +%Y%m%d%H%M)" -m "FFmpeg build"
-          git push origin "v$(date +%Y%m%d%H%M)"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release
-        id: create_release
-        run: |
-          RELEASE_NAME="FFmpeg Build v$(date +%Y%m%d%H%M)"
-          gh release create "$RELEASE_NAME" ../ffmpeg-redistributable-*.tar.gz --title "$RELEASE_NAME" --notes "Automated FFmpeg build."
+          TAG_NAME="v$(date +%Y%m%d%H%M)"  # Valid tag name
+          RELEASE_NAME="FFmpeg Build $TAG_NAME"
+          gh release create "$TAG_NAME" ffmpeg-redistributable-*.tar.gz --title "$RELEASE_NAME" --notes "Automated FFmpeg build."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
