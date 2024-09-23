@@ -190,6 +190,6 @@ done
 filter_complex=${filter_complex%?}  # Remove the last semicolon
 
 # Run ffmpeg with the generated filter graph
-./ffmpeg $inputs -filter_complex "$filter_complex" -map "[v9]" -c:v libx264 -pix_fmt yuv420p -t $((10 * image_display_duration + 9 * duration)) -y "$output_file"
+ffmpeg $inputs -filter_complex "$filter_complex" -map "[v9]" -c:v libx264 -pix_fmt yuv420p -t $((10 * image_display_duration + 9 * duration)) -y "$output_file"
 
 echo "Video with transitions saved as: ${output_file}"
