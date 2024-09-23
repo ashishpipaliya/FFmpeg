@@ -1,0 +1,53 @@
+name: Build FFmpeg for Linux
+
+on:
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential yasm pkg-config libx264-dev libfdk-aac-dev libmp3lame-dev libopus-dev libvpx-dev
+
+      - name: Build FFmpeg
+        run: |
+          ./configure \
+            --pkg-config-flags="--static" \
+            --extra-cflags="-I/usr/local/include" \
+            --extra-ldflags="-L/usr/local/lib" \
+            --extra-libs="-lpthread -lm" \
+            --enable-gpl \
+            --enable-nonfree \
+            --enable-libx264 \
+            --enable-libfdk-aac \
+            --enable-libmp3lame \
+            --enable-libopus \
+            --enable-libvpx \
+            --enable-filter=xfade \
+            --enable-static \
+            --disable-shared \
+            --disable-debug \
+            --disable-doc \
+            --disable-ffplay  # Removed --disable-programs
+          make -j$(nproc)
+
+      - name: Create Redistributable Package
+        run: |
+          mkdir -p ../ffmpeg-redistributable
+          cp ffmpeg ../ffmpeg-redistributable/
+          cp ffprobe ../ffmpeg-redistributable/
+          cd ..
+          tar -czvf ffmpeg-redistributable-$(date +%Y%m%d%H%M).tar.gz ffmpeg-redistributable
+
+      - name: Create Tag
+        run: |
+          git tag -a "v$(date +%Y%m%d%H%M)" -m "FFmpeg build"
+          git push origin "v$(date +%Y%m%d%H%M)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
