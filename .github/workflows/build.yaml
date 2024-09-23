@@ -44,10 +44,24 @@ jobs:
           cp ffprobe ../ffmpeg-redistributable/
           cd ..
           tar -czvf ffmpeg-redistributable-$(date +%Y%m%d%H%M).tar.gz ffmpeg-redistributable
+          echo "FFmpeg redistributable built successfully."
+
+      - name: Set Git Identity
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
 
       - name: Create Tag
         run: |
           git tag -a "v$(date +%Y%m%d%H%M)" -m "FFmpeg build"
           git push origin "v$(date +%Y%m%d%H%M)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        id: create_release
+        run: |
+          RELEASE_NAME="FFmpeg Build v$(date +%Y%m%d%H%M)"
+          gh release create "$RELEASE_NAME" ../ffmpeg-redistributable-*.tar.gz --title "$RELEASE_NAME" --notes "Automated FFmpeg build."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
