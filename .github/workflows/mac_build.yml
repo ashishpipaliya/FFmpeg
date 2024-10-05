@@ -1,0 +1,57 @@
+name: Build FFmpeg
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  build:
+    runs-on: macos-latest  # Use macOS runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          brew install yasm pkg-config cmake \
+            libx264 libfdk-aac libmp3lame libopus libvpx
+
+      - name: Configure and Build FFmpeg
+        run: |
+          ./configure \
+            --pkg-config-flags="--static" \
+            --extra-cflags="-I/usr/local/include" \
+            --extra-ldflags="-L/usr/local/lib" \
+            --extra-libs="-lpthread -lm" \
+            --enable-gpl \
+            --enable-nonfree \
+            --enable-libx264 \
+            --enable-libfdk-aac \
+            --enable-libmp3lame \
+            --enable-libopus \
+            --enable-libvpx \
+            --enable-filter=xfade \
+            --enable-static \
+            --disable-shared \
+            --disable-debug \
+            --disable-doc \
+            --disable-programs \
+            --disable-ffplay
+          
+          make -j$(sysctl -n hw.ncpu)
+
+          # Create redistributable directory
+          mkdir -p ffmpeg-redistributable/bin
+          cp ffmpeg ffmpeg-redistributable/bin/
+          cp ffprobe ffmpeg-redistributable/bin/
+
+          # Create the tar.gz file for redistributable FFmpeg binary
+          tar -czvf ffmpeg-redistributable-$(date +%Y%m%d%H%M).tar.gz -C ffmpeg-redistributable .
+
+      - name: Create GitHub Release
+        run: |
+          TAG_NAME="ffmpeg-v$(date +%Y%m%d%H%M)"  # Better tag format with version
+          RELEASE_NAME="FFmpeg Build $TAG_NAME"
+          gh release create "$TAG_NAME" ffmpeg-redistributable-*.tar.gz --title "$RELEASE_NAME" --notes "Automated FFmpeg build."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
