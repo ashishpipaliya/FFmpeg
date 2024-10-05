@@ -53,9 +53,7 @@ jobs:
             --disable-shared \
             --disable-debug \
             --disable-doc \
-            --disable-programs \
-            --disable-ffplay \
-            --enable-ffprobe
+            --disable-ffplay  # Only disable ffplay, keep ffmpeg and ffprobe
 
           make -j$(nproc)
 
