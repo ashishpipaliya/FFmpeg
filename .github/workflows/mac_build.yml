@@ -14,7 +14,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install yasm pkg-config cmake \
-            libx264 libfdk-aac libmp3lame libopus libvpx
+            ffmpeg --with-libx264 --with-libfdk-aac --with-libmp3lame --with-libopus --with-libvpx
 
       - name: Configure and Build FFmpeg
         run: |
@@ -37,7 +37,7 @@ jobs:
             --disable-doc \
             --disable-programs \
             --disable-ffplay
-          
+
           make -j$(sysctl -n hw.ncpu)
 
           # Create redistributable directory
