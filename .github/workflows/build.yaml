@@ -28,6 +28,12 @@ jobs:
             pkg-config \
             libx264-dev
 
+      - name: Get FFmpeg Version
+        id: ffmpeg-version
+        run: |
+          ffmpeg_version=$(./version.sh | grep 'FFmpeg version' | awk '{print $3}')
+          echo "FFMPEG_VERSION=$ffmpeg_version" >> $GITHUB_ENV
+
       - name: Configure and Build FFmpeg
         run: |
           ./configure \
@@ -52,19 +58,63 @@ jobs:
 
           make -j$(nproc)
 
-          # Create redistributable directory
-          mkdir -p ../ffmpeg-redistributable
-          cp ffmpeg ../ffmpeg-redistributable/
-          cp ffprobe ../ffmpeg-redistributable/
+      - name: Create Redistributable Package
+        run: |
+          # Create redistributable directory and copy binaries
+          mkdir -p ffmpeg-redistributable/bin
+          cp ffmpeg ffmpeg-redistributable/bin/
+          cp ffprobe ffmpeg-redistributable/bin/
+          
+          # Create the tar.gz file for redistributable FFmpeg binary
+          tar -czvf ffmpeg-redistributable-${{ env.FFMPEG_VERSION }}-$(date +%Y%m%d%H%M).tar.gz ffmpeg-redistributable/
 
-          # Create the tar.gz file
-          cd ..
-          tar -czvf ffmpeg-redistributable-$(date +%Y%m%d%H%M).tar.gz ffmpeg-redistributable
+      - name: Create Install Script
+        run: |
+          # Create an installation script that downloads and sets FFmpeg binary in /usr/local/bin
+          cat << 'EOF' > install_ffmpeg.sh
+          #!/bin/bash
+          set -e
+          
+          # Determine OS type
+          if [[ "$OSTYPE" != "linux-gnu"* ]]; then
+              echo "This installer is only for Linux."
+              exit 1
+          fi
+
+          # Define destination directories
+          BIN_DIR="/usr/local/bin"
+          
+          # Download the latest FFmpeg package
+          curl -L -o ffmpeg-redistributable.tar.gz https://github.com/<your_repo>/releases/download/${FFMPEG_VERSION}/ffmpeg-redistributable-${FFMPEG_VERSION}.tar.gz
+          
+          # Extract the package
+          tar -xzvf ffmpeg-redistributable.tar.gz
+          
+          # Move binaries to /usr/local/bin
+          sudo mv ffmpeg-redistributable/bin/ffmpeg $BIN_DIR/ffmpeg
+          sudo mv ffmpeg-redistributable/bin/ffprobe $BIN_DIR/ffprobe
+          
+          # Set executable permissions
+          sudo chmod +x $BIN_DIR/ffmpeg
+          sudo chmod +x $BIN_DIR/ffprobe
+          
+          # Cleanup
+          rm -rf ffmpeg-redistributable ffmpeg-redistributable.tar.gz
+          
+          echo "FFmpeg successfully installed in /usr/local/bin"
+          EOF
+
+          # Make the script executable
+          chmod +x install_ffmpeg.sh
 
       - name: Create GitHub Release
         run: |
-          TAG_NAME="v$(date +%Y%m%d%H%M)"  # Valid tag name
+          TAG_NAME="ffmpeg-${FFMPEG_VERSION}-$(date +%Y%m%d%H%M)"  # Human-readable tag name with version
           RELEASE_NAME="FFmpeg Build $TAG_NAME"
-          gh release create "$TAG_NAME" ffmpeg-redistributable-*.tar.gz --title "$RELEASE_NAME" --notes "Automated FFmpeg build."
+          gh release create "$TAG_NAME" \
+            ffmpeg-redistributable-*.tar.gz \
+            install_ffmpeg.sh \
+            --title "$RELEASE_NAME" \
+            --notes "Automated FFmpeg build with version $FFMPEG_VERSION."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
