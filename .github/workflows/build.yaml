@@ -54,7 +54,8 @@ jobs:
             --disable-debug \
             --disable-doc \
             --disable-programs \
-            --disable-ffplay
+            --disable-ffplay \
+            --enable-ffprobe
 
           make -j$(nproc)
 
