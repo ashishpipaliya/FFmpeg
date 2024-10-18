@@ -12,7 +12,7 @@ echo "Configuring FFmpeg with desired options..."
 # Step 2: Install dependencies on Ubuntu
 echo "Installing dependencies on Ubuntu..."
 apt-get update
-apt-get install -y pkg-config libx264-dev libfdk-aac-dev libmp3lame-dev libopus-dev libvpx-dev
+apt-get install -y pkg-config libx264-dev libmp3lame-dev libopus-dev libvpx-dev libavcodec-extra
 
 # Step 3: Configure FFmpeg with provided options for dynamic linking
 ./configure \
@@ -22,7 +22,6 @@ apt-get install -y pkg-config libx264-dev libfdk-aac-dev libmp3lame-dev libopus-
   --enable-gpl \
   --enable-nonfree \
   --enable-libx264 \
-  --enable-libfdk-aac \
   --enable-libmp3lame \
   --enable-libopus \
   --enable-libvpx \
