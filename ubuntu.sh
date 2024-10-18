@@ -11,8 +11,8 @@ echo "Configuring FFmpeg with desired options..."
 
 # Step 2: Install dependencies on Ubuntu
 echo "Installing dependencies on Ubuntu..."
-sudo apt-get update
-sudo apt-get install -y pkg-config libx264-dev libfdk-aac-dev libmp3lame-dev libopus-dev libvpx-dev
+apt-get update
+apt-get install -y pkg-config libx264-dev libfdk-aac-dev libmp3lame-dev libopus-dev libvpx-dev
 
 # Step 3: Configure FFmpeg with provided options for dynamic linking
 ./configure \
@@ -48,7 +48,7 @@ make -j$NUM_CORES
 
 # Step 5: Install FFmpeg and FFprobe binaries to the system
 echo "Installing FFmpeg..."
-sudo make install
+make install
 
 # Completion message
 echo "FFmpeg has been successfully installed."
