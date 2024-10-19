@@ -57,6 +57,7 @@ compile_ffmpeg() {
         --enable-libmp3lame \
         --enable-libopus \
         --enable-libvpx \
+        --enable-libass \
         --enable-filter=xfade \
         --enable-shared \
         --disable-static \
