@@ -38,6 +38,9 @@ apt-get install -y pkg-config libx264-dev libmp3lame-dev libopus-dev libvpx-dev 
   --enable-demuxer=mp4,matroska,webm,ogg \
   --enable-ffmpeg \
   --enable-ffprobe \
+  --enable-libavdevice \
+  --enable-libavfilter \
+  --enable-libavformat \
   --arch=$(uname -m) \
   --target-os=linux
 
